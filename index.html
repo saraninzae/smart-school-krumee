@@ -1,45 +1,298 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบลงเวลาด้วยใบหน้า - โรงเรียนโพธิ์ทองวิทยานุสรณ์</title>
-    <style>
-        body { 
-            font-family: 'Sarabun', sans-serif; 
-            text-align: center; 
-            background-color: #f4f7f6; 
-            margin: 0; 
-            padding: 20px; 
-        }
-        h2 { color: #2c3e50; }
-        #video-container { 
-            position: relative; 
-            display: inline-block; 
-            margin-top: 20px; 
-            border: 4px solid #4A86E8; 
-            border-radius: 10px; 
-            overflow: hidden; 
-            background-color: #000;
-        }
-        video { display: block; }
-        canvas { position: absolute; top: 0; left: 0; }
-        #status { 
-            margin-top: 15px; 
-            font-size: 18px; 
-            font-weight: bold; 
-            color: #e67e22; 
-        }
-    </style>
-    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-    <script defer src="script.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>จุดลงเวลา - โรงเรียนโพธิทองวิทยานุสรณ์</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+
+  <style>
+    body { height: 100vh; margin: 0; overflow: hidden; font-family: 'Sarabun', sans-serif; background: linear-gradient(135deg, #0f3460 0%, #1a5276 50%, #2980b9 100%); display: flex; align-items: center; justify-content: center; }
+    .gate-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0f3460 0%, #1a5276 50%, #2980b9 100%); z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
+    .login-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); width: 90%; max-width: 420px; padding: 40px; border-radius: 25px; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.5); text-align: center; }
+    .logo-img { width: 100px; height: 100px; object-fit: contain; margin-bottom: 20px; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1)); }
+    .title-text { color: #0f3460; font-weight: 700; font-size: 1.5rem; margin-bottom: 5px; }
+    .subtitle-text { color: #7f8c8d; font-size: 0.95rem; margin-bottom: 30px; }
+    .input-group-text { background: #f0f4f8; border: none; color: #1a5276; border-radius: 12px 0 0 12px !important; }
+    .form-control-login { background: #f0f4f8; border: none; padding: 12px; border-radius: 0 12px 12px 0 !important; font-weight: 500; color: #2c3e50; }
+    .form-control-login:focus { background: #eef2f7; box-shadow: none; }
+    .btn-login { background: linear-gradient(135deg, #1a5276 0%, #0f3460 100%); color: white; border: none; padding: 12px; border-radius: 12px; font-size: 1.1rem; font-weight: 600; width: 100%; margin-top: 10px; transition: all 0.3s; box-shadow: 0 5px 15px rgba(15, 52, 96, 0.3); }
+    .btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15, 52, 96, 0.4); color: white; }
+    .btn-back { margin-top: 25px; display: inline-block; color: #7f8c8d; text-decoration: none; font-size: 0.9rem; transition: 0.3s; }
+    .btn-back:hover { color: #1a5276; }
+    .scanner-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); width: 90%; max-width: 680px; border-radius: 25px; padding: 25px; box-shadow: 0 30px 60px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; position: relative; }
+    .btn-exit-scanner { position: absolute; top: 15px; right: 15px; border-radius: 10px; font-weight: 600; z-index: 100; }
+    .header-info { text-align: center; margin-bottom: 15px; width: 100%; }
+    .clock { font-size: 2.5rem; font-weight: 700; color: #1a5276; line-height: 1; }
+    .date { font-size: 1rem; color: #555; }
+    .camera-box { position: relative; width: 100%; max-width: 500px; aspect-ratio: 4/3; background: #000; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+    video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+    canvas { position: absolute; top: 0; left: 0; }
+    .ai-guide { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 220px; height: 300px; border: 3px dashed rgba(255,255,255,0.6); border-radius: 120px; pointer-events: none; }
+    .liveness-status { margin-top: 20px; padding: 10px 20px; border-radius: 50px; background: #e9ecef; color: #333; font-weight: 600; font-size: 1.1rem; transition: 0.3s; min-width: 300px; text-align: center; }
+    .status-active { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status-wait { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    .status-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+  </style>
 </head>
 <body>
-    <h2>ระบบลงเวลาเข้างาน<br>หมวดหมู่งานอุตสาหกรรมศิลป์</h2>
-    <div id="status">กำลังโหลดระบบ AI โครงสร้างใบหน้า... (อาจใช้เวลาสักครู่)</div>
-    
-    <div id="video-container">
-        <video id="video" width="640" height="480" autoplay muted></video>
+
+  <div id="gate" class="gate-overlay">
+    <div class="login-card">
+      <img src="https://img5.pic.in.th/file/secure-sv1/305761736_787356272445059_8649763799880784369_n.jpg" alt="Logo" class="logo-img">
+      
+      <h3 class="title-text">เปิดจุดลงเวลาปฏิบัติราชการ</h3>
+      <p class="subtitle-text">ระบบสแกนใบหน้า AI อัจฉริยะ</p>
+
+      <div class="mb-4">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fa-solid fa-key"></i></span>
+          <input type="password" id="pass" class="form-control form-control-login" placeholder="รหัสผ่าน Admin">
+        </div>
+      </div>
+
+      <button class="btn btn-login" id="btnUnlock" onclick="unlock()">
+        <i class="fa-solid fa-unlock-keyhole me-2"></i> เปิดระบบสแกน
+      </button>
+      
+      <a href="https://script.google.com/macros/s/AKfycbx7sgOblfDdXG_rdVacAFV6_AObBY2iTz5JPBl9PcBf5jetJflWEnifbJS8gCPTwveB6A/exec" class="btn-back">
+        <i class="fa-solid fa-arrow-left"></i> กลับหน้าหลัก
+      </a>
     </div>
+  </div>
+
+  <div class="scanner-card">
+    <a href="https://script.google.com/macros/s/AKfycbx7sgOblfDdXG_rdVacAFV6_AObBY2iTz5JPBl9PcBf5jetJflWEnifbJS8gCPTwveB6A/exec" class="btn btn-outline-danger btn-sm btn-exit-scanner">
+      <i class="fa-solid fa-right-from-bracket"></i> ปิดสแกน
+    </a>
+
+    <div class="header-info mt-3">
+      <img src="https://img5.pic.in.th/file/secure-sv1/305761736_787356272445059_8649763799880784369_n.jpg" width="50" class="mb-2">
+      <h5 class="fw-bold text-secondary">โรงเรียนโพธิทองวิทยานุสรณ์</h5>
+      <div id="clock" class="clock">00:00:00</div>
+      <div id="date" class="date">...</div>
+    </div>
+
+    <div class="camera-box">
+      <div class="ai-guide"></div>
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <div id="status" class="liveness-status">
+      <i class="fa-solid fa-spinner fa-spin"></i> รอการเปิดระบบ...
+    </div>
+  </div>
+
+<script>
+  // 🔴 URL API ของคุณครู
+  const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx7sgOblfDdXG_rdVacAFV6_AObBY2iTz5JPBl9PcBf5jetJflWEnifbJS8gCPTwveB6A/exec";
+
+  let matcher, isScanning = false;
+  let cooldownList = {};
+  const COOLDOWN_TIME = 5 * 60 * 1000; 
+  let eyeState = 'open'; 
+
+  setInterval(() => {
+    const n = new Date();
+    document.getElementById('clock').innerText = n.toLocaleTimeString('th-TH');
+    document.getElementById('date').innerText = n.toLocaleDateString('th-TH', {weekday:'long', day:'numeric', month:'long'});
+  }, 1000);
+
+  document.getElementById('pass').addEventListener('keypress', (e) => { if(e.key === 'Enter') unlock(); });
+
+  // 1. ตรวจสอบรหัสผ่านผ่าน API แทน google.script.run
+  function unlock() {
+    const p = document.getElementById('pass').value;
+    const btn = document.getElementById('btnUnlock');
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังตรวจสอบ...';
+    btn.disabled = true;
+
+    fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: "checkScannerPass", pass: p })
+    })
+    .then(res => res.json())
+    .then(res => {
+        if(res.success) {
+          document.getElementById('gate').style.opacity = '0';
+          setTimeout(() => { document.getElementById('gate').style.display = 'none'; }, 500);
+          initAI(); 
+        } else {
+          Swal.fire({icon: 'error', title: 'รหัสผิด', text: 'รหัสผ่านไม่ถูกต้อง', confirmButtonColor: '#1a5276'});
+          btn.innerHTML = '<i class="fa-solid fa-unlock-keyhole me-2"></i> เปิดระบบสแกน';
+          btn.disabled = false;
+        }
+    })
+    .catch(err => {
+        Swal.fire('ข้อผิดพลาด', 'เซิร์ฟเวอร์ไม่ตอบสนอง: ' + err.message, 'error');
+        btn.innerHTML = '<i class="fa-solid fa-unlock-keyhole me-2"></i> เปิดระบบสแกน';
+        btn.disabled = false;
+    });
+  }
+
+  // 2. โหลด AI และดึงฐานข้อมูลผ่าน API
+  async function initAI() {
+    try {
+      setStatus('<i class="fa-solid fa-cloud-arrow-down fa-bounce"></i> กำลังโหลดสมองกล AI...', 'status-wait');
+      const url = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+      
+      await Promise.all([
+        faceapi.nets.ssdMobilenetv1.loadFromUri(url),
+        faceapi.nets.faceLandmark68Net.loadFromUri(url),
+        faceapi.nets.faceRecognitionNet.loadFromUri(url)
+      ]);
+      
+      setStatus('<i class="fa-solid fa-database fa-flip"></i> กำลังดึงฐานข้อมูลใบหน้า...', 'status-wait');
+      
+      fetch(GAS_WEB_APP_URL + '?api=getFaces')
+        .then(res => res.json())
+        .then(data => {
+          if(!data || data.length === 0) {
+            return setStatus('⚠️ ไม่มีข้อมูลใบหน้าในระบบ', 'status-error');
+          }
+          try {
+            // แปลงข้อมูลที่ได้จาก API ให้ AI เข้าใจ
+            const labeled = data.map(r => new faceapi.LabeledFaceDescriptors(r.name, [new Float32Array(r.descriptor)]));
+            matcher = new faceapi.FaceMatcher(labeled, 0.55);
+            startCam(); 
+          } catch(e) {
+            console.error(e); setStatus('❌ ฐานข้อมูลใบหน้ามีปัญหา', 'status-error');
+          }
+        })
+        .catch(err => {
+          console.error(err); setStatus('❌ ดึงข้อมูลล้มเหลว', 'status-error');
+        });
+
+    } catch (error) {
+      console.error(error); setStatus('❌ โหลด AI ล้มเหลว', 'status-error');
+    }
+  }
+
+  function startCam() {
+    setStatus('<i class="fa-solid fa-camera fa-spin"></i> กำลังเปิดกล้อง...', 'status-wait');
+    navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 } } })
+      .then(stream => {
+        const v = document.getElementById('video');
+        v.srcObject = stream;
+        setStatus('📷 มองกล้อง แล้วกะพริบตา 1 ครั้ง', 'status-wait');
+        v.addEventListener('play', detect);
+      })
+      .catch(err => setStatus('❌ ไม่สามารถเปิดกล้องได้', 'status-error'));
+  }
+
+  function getEAR(eye) {
+    const d1 = dist(eye[1], eye[5]);
+    const d2 = dist(eye[2], eye[4]);
+    const d3 = dist(eye[0], eye[3]);
+    return (d1 + d2) / (2 * d3);
+  }
+  function dist(p1, p2) { return Math.hypot(p1.x - p2.x, p1.y - p2.y); }
+
+  async function detect() {
+    const v = document.getElementById('video');
+    const c = document.getElementById('canvas');
+    const displaySize = { width: v.offsetWidth, height: v.offsetHeight };
+    faceapi.matchDimensions(c, displaySize);
+
+    setInterval(async () => {
+      if(isScanning) return; 
+
+      const d = await faceapi.detectSingleFace(v).withFaceLandmarks().withFaceDescriptor();
+      c.getContext('2d').clearRect(0, 0, c.width, c.height);
+
+      if(d) {
+        const match = matcher.findBestMatch(d.descriptor);
+        const box = faceapi.resizeResults(d, displaySize).detection.box;
+        new faceapi.draw.DrawBox(box, { label: match.toString(), boxColor: match.label === 'unknown' ? 'red' : '#0d6efd' }).draw(c);
+
+        if(match.label !== 'unknown') {
+          
+          if(isInCooldown(match.label)) {
+             setStatus(`⏳ คุณ${match.label} เพิ่งสแกนไป (รอสักครู่)`, 'status-wait');
+             eyeState = 'open';
+             return; 
+          }
+
+          const leftEye = d.landmarks.getLeftEye();
+          const rightEye = d.landmarks.getRightEye();
+          const ear = (getEAR(leftEye) + getEAR(rightEye)) / 2;
+
+          if (ear < 0.28) { 
+             eyeState = 'closed'; 
+             setStatus(`😉 ดีมาก! ลืมตาขึ้นเลยครับ...`, 'status-active');
+          } 
+          else if (ear > 0.29 && eyeState === 'closed') {
+             eyeState = 'open';
+             processScan(match.label, v);
+          } 
+          else {
+             if (eyeState === 'open') {
+               setStatus(`👁️ คุณ${match.label} กะพริบตา 1 ครั้ง`, 'status-active');
+             }
+          }
+        } else {
+          setStatus('❌ ไม่รู้จักใบหน้า', 'status-error');
+          eyeState = 'open';
+        }
+      } else {
+        setStatus('📷 มองกล้อง แล้วกะพริบตา 1 ครั้ง', 'status-wait');
+        eyeState = 'open';
+      }
+    }, 150);
+  }
+  
+  function isInCooldown(name) {
+    if(!cooldownList[name]) return false;
+    return (new Date().getTime() - cooldownList[name]) < COOLDOWN_TIME;
+  }
+
+  // 3. ส่งข้อมูลเข้างานพร้อมรูปถ่ายผ่าน API 
+  function processScan(name, video) {
+    isScanning = true;
+    cooldownList[name] = new Date().getTime(); 
+    setStatus(`⏳ กำลังบันทึกข้อมูล คุณ${name}...`, 'status-active');
+    
+    const cc = document.createElement('canvas');
+    cc.width = video.videoWidth; cc.height = video.videoHeight;
+    cc.getContext('2d').drawImage(video, 0, 0);
+    const img = cc.toDataURL('image/jpeg', 0.8);
+
+    fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: "สแกนหน้า", name: name, image: img })
+    })
+    .then(res => res.json())
+    .then(res => {
+        if(res.success) {
+          Swal.fire({
+            icon: 'success', 
+            title: res.type,
+            html: `คุณ<b>${res.name}</b><br>เวลา ${res.time} น.<br>สถานะ: <span class="badge ${res.status === 'สาย' ? 'bg-danger' : 'bg-success'}">${res.status}</span>`,
+            timer: 3000,
+            showConfirmButton: false
+          });
+        } else {
+          Swal.fire({ icon: 'warning', title: 'ไม่สามารถบันทึกได้', text: res.msg, timer: 4000 });
+        }
+        setTimeout(() => { isScanning = false; setStatus('📷 พร้อมสแกนคนถัดไป', 'status-wait'); }, 3000);
+    })
+    .catch(err => {
+        Swal.fire('ข้อผิดพลาด', err.message, 'error');
+        isScanning = false;
+        setStatus('📷 พร้อมสแกนคนถัดไป', 'status-wait');
+    });
+  }
+
+  function setStatus(txt, cls) {
+    const s = document.getElementById('status');
+    s.innerHTML = txt; s.className = 'liveness-status ' + cls;
+  }
+</script>
 </body>
 </html>
