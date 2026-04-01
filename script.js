@@ -2,7 +2,7 @@ const video = document.getElementById('video');
 const statusText = document.getElementById('status');
 
 // 🔴 วาง URL ของ Google Apps Script (Web App) ของคุณที่นี่
-const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx7sgOblfDdXG_rdVacAFV6_AObBY2iTz5JPBl9PcBf5jetJflWEnifbJS8gCPTwveB6A/exec";
+const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzZSgCVEp9G4MWTb7YaJ723wNpHPprTx4_yq6MTQirW4Nk8KGp0r_uAz7YTZJhgzZASEQ/exec";
 
 // ตำแหน่งที่เก็บไฟล์ Model AI ของ face-api
 const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
